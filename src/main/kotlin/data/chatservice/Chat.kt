@@ -1,13 +1,5 @@
 package ru.netology.data.charservice
 
-open class ChartService(
-    var charts: MutableMap<Int, Chat>
-) {
-    fun add() {
-
-    }
-}
-
 class Chat(
     private var nextId: Int = 0,
     var messages: MutableMap<Int, Message> = mutableMapOf<Int, Message>(),
