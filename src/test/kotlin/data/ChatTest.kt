@@ -119,7 +119,8 @@ class ChatTest {
         chat.add(message1)
         chat.add(message2)
         chat.add(message3)
-        val result = listOf<Pair<Int?, Message>>(Pair(message2.companionId, message2), Pair(message3.companionId, message3))
+        val result =
+            listOf<Pair<Int?, Message>>(Pair(message2.companionId, message2), Pair(message3.companionId, message3))
         assertEquals(result, chat.getLastMessages())
     }
 
@@ -147,7 +148,7 @@ class ChatTest {
         chat.add(message1)
         chat.add(message2)
         chat.add(message3)
-        chat.getChartMessages(1,3)
+        chat.getChartMessages(1, 3)
         assertTrue(chat.messages[1]!!.isRead)
     }
 
@@ -160,7 +161,7 @@ class ChatTest {
         chat.add(message1)
         chat.add(message2)
         chat.add(message3)
-        chat.getChartMessages(1,1)
+        chat.getChartMessages(1, 1)
         assertFalse(chat.messages[2]!!.isRead)
     }
 

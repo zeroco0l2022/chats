@@ -26,23 +26,25 @@ class Chat(
     }
 
     fun deleteChat(companionId: Int): Boolean {
-        if (chats.delete(companionId)){
-        messages = messages.filterValues { it.companionId != companionId}.toMutableMap()
-        return true
+        if (chats.delete(companionId)) {
+            messages = messages.filterValues { it.companionId != companionId }.toMutableMap()
+            return true
         }
         return false
     }
+
     fun getChatsList() = if (chats.isNotEmpty()) chats.values else throw EmptyChatException("Нет сообщений")
-    fun editMessage(newMessage: Message) : Boolean {
-        if(messages.delete(newMessage.id!!)) {
-        messages.add(newMessage.id!!, newMessage)
+    fun editMessage(newMessage: Message): Boolean {
+        if (messages.delete(newMessage.id!!)) {
+            messages.add(newMessage.id!!, newMessage)
             chats.add(newMessage.companionId!!, messages)
             return true
         }
         return false
 
     }
-    fun deleteMessage(id: Int) : Boolean {
+
+    fun deleteMessage(id: Int): Boolean {
         if (messages.containsKey(id)) {
             val chatId = messages[id]!!.companionId
             messages.delete(id)
@@ -55,14 +57,15 @@ class Chat(
     fun getUnreadChatsCount() = messages.filterValues { !it.isRead }.mapKeys { it.value.companionId }.count()
 
     fun getLastMessages(): List<Pair<Int?, Message>> {
-        if(messages.isNotEmpty()){
+        if (messages.isNotEmpty()) {
             return messages.mapKeys { it.value.companionId }.toList()
         }
         throw EmptyChatException("Нет сообщений")
     }
 
-    fun getChartMessages (id: Int, readToMessage: Int): List<Pair<Int, Message>> {
-        messages.filterValues { it.companionId == id}.filterValues { !it.isRead }.readTo(readToMessage).mapValues { it.value.isRead = true }
+    fun getChartMessages(id: Int, readToMessage: Int): List<Pair<Int, Message>> {
+        messages.filterValues { it.companionId == id }.filterValues { !it.isRead }.readTo(readToMessage)
+            .mapValues { it.value.isRead = true }
         chats.add(id, messages)
         return chats[id]!!.toList()
     }
@@ -85,7 +88,7 @@ fun <K, V> MutableMap<K, V>.delete(toDelete: K): Boolean {
     return false
 }
 
-fun <K,V> MutableMap<K,V>.add(id: K, toAdd: V) {
+fun <K, V> MutableMap<K, V>.add(id: K, toAdd: V) {
     this[id] = toAdd
 }
 
@@ -93,10 +96,10 @@ fun <K, V> Map<out K, V>.readTo(range: Int): Map<K, V> {
     val result = LinkedHashMap<K, V>()
     var count = 0
     for (entry in this) {
-        count ++
-            result.put(entry.key, entry.value)
-            if(count == range) break
-        }
+        count++
+        result.put(entry.key, entry.value)
+        if (count == range) break
+    }
 
     return result
 }
