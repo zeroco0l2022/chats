@@ -3,9 +3,9 @@ package data
 
 import org.junit.Test
 import org.junit.Assert.*
-import ru.netology.data.charservice.Chat
+import data.chatservice.Chat
 import ru.netology.data.charservice.EmptyChatException
-import ru.netology.data.charservice.Message
+import data.chatservice.Message
 
 
 class ChatTest {
@@ -34,26 +34,31 @@ class ChatTest {
         chats.add(Message(companionId = 1, text = "Text"))
         chats.add(Message(companionId = 1, text = "Text"))
         chats.add(Message(companionId = 2, text = "Text"))
-        assertTrue(chats.deleteChat(1))
+        chats.deleteChat(1)
+        assertEquals(1, chats.messages.size)
+    }
+
+    @Test(expected = EmptyChatException::class)
+    fun deleteChatFailed() {
+        val chats = Chat()
+        chats.deleteChat(1)
     }
 
     @Test
-    fun readChart() {
+    fun readChatPassed() {
         val chat = Chat()
-        val message1 = Message(companionId = 1, text = "Text")
-        val message2 = Message(companionId = 1, text = "Text2")
-        val message3 = Message(companionId = 1, text = "Text3")
-        chat.add(message1)
-        chat.add(message2)
-        chat.add(message3)
-        val map = chat.chats.values
-        assertEquals(map, chat.getChatsList())
+        chat.add(Message(companionId = 1, text = "Text"))
+        chat.add(Message(companionId = 1, text = "Text2"))
+        chat.add(Message(companionId = 1, text = "Text3"))
+        chat.add(Message(companionId = 2, text = "Text3"))
+        assertEquals(2, chat.getChats().size)
     }
+
 
     @Test(expected = EmptyChatException::class)
     fun readChartFailed() {
         val chat = Chat()
-        chat.getChatsList()
+        chat.getChats()
     }
 
     @Test
@@ -64,18 +69,19 @@ class ChatTest {
         chat.add(message1)
         chat.add(message2)
         val message3 = Message(id = message1.id, companionId = 1, text = "Text3")
-        assertTrue(chat.editMessage(message3))
+        chat.editMessage(message3)
+        assertEquals(chat.messages[0], message3)
     }
 
-    @Test
+    @Test(expected = EmptyChatException::class)
     fun editMessageFailed() {
         val chat = Chat()
         val message1 = Message(companionId = 1, text = "Text")
         val message2 = Message(companionId = 1, text = "Text2")
         chat.add(message1)
         chat.add(message2)
-        val message3 = Message(id = 0, companionId = 1, text = "Text3")
-        assertFalse(chat.editMessage(message3))
+        val message3 = Message(id = 3, companionId = 1, text = "Text3")
+        chat.editMessage(message3)
     }
 
     @Test
@@ -85,17 +91,18 @@ class ChatTest {
         val message2 = Message(companionId = 1, text = "Text2")
         chat.add(message1)
         chat.add(message2)
-        assertTrue(chat.deleteMessage(message1.id!!))
+        chat.deleteMessage(message1.id)
+        assertEquals(message2, chat.messages[0])
     }
 
-    @Test
+    @Test(expected = EmptyChatException::class)
     fun deleteMessageFailed() {
         val chat = Chat()
         val message1 = Message(companionId = 1, text = "Text")
         val message2 = Message(companionId = 1, text = "Text2")
         chat.add(message1)
         chat.add(message2)
-        assertFalse(chat.deleteMessage(4))
+        chat.deleteMessage(4)
     }
 
     @Test
@@ -110,6 +117,20 @@ class ChatTest {
         assertEquals(2, chat.getUnreadChatsCount())
     }
 
+    @Test(expected = EmptyChatException::class)
+    fun getUnreadChatsFailed() {
+        val chat = Chat()
+        val message1 = Message(companionId = 1, text = "Text")
+        val message2 = Message(companionId = 1, text = "Text2")
+        val message3 = Message(companionId = 2, text = "Text2")
+        chat.add(message1)
+        chat.add(message2)
+        chat.add(message3)
+        chat.getChartMessages(1, 3)
+        chat.getChartMessages(2, 3)
+        chat.getUnreadChatsCount()
+    }
+
     @Test
     fun getLastMessagesPassed() {
         val chat = Chat()
@@ -119,23 +140,13 @@ class ChatTest {
         chat.add(message1)
         chat.add(message2)
         chat.add(message3)
-        val result =
-            listOf<Pair<Int?, Message>>(Pair(message2.companionId, message2), Pair(message3.companionId, message3))
+        val result = listOf(message2.text!!, message2.text!!).toString()
         assertEquals(result, chat.getLastMessages())
     }
 
     @Test(expected = EmptyChatException::class)
     fun getLastMessagesFailed() {
         val chat = Chat()
-        val message1 = Message(companionId = 1, text = "Text")
-        val message2 = Message(companionId = 1, text = "Text2")
-        val message3 = Message(companionId = 2, text = "Text2")
-        chat.add(message1)
-        chat.add(message2)
-        chat.add(message3)
-        chat.deleteMessage(message1.id!!)
-        chat.deleteMessage(message2.id!!)
-        chat.deleteMessage(message3.id!!)
         chat.getLastMessages()
     }
 
@@ -149,7 +160,7 @@ class ChatTest {
         chat.add(message2)
         chat.add(message3)
         chat.getChartMessages(1, 3)
-        assertTrue(chat.messages[1]!!.isRead)
+        assertTrue(chat.messages[1].isRead)
     }
 
     @Test
@@ -162,7 +173,7 @@ class ChatTest {
         chat.add(message2)
         chat.add(message3)
         chat.getChartMessages(1, 1)
-        assertFalse(chat.messages[2]!!.isRead)
+        assertFalse(chat.messages[2].isRead)
     }
 
 }
