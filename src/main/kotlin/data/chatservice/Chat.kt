@@ -1,70 +1,86 @@
-package ru.netology.data.charservice
+package data.chatservice
+
+import ru.netology.data.charservice.EmptyChatException
+import java.util.LinkedList
 
 class Chat(
-    private var nextId: Int = 0,
-    var messages: MutableMap<Int, Message> = mutableMapOf<Int, Message>(),
-    var chats: MutableMap<Int, MutableMap<Int, Message>> = mutableMapOf<Int, MutableMap<Int, Message>>()
+    var messages: MutableList<Message> = mutableListOf()
 ) {
     fun add(message: Message): Boolean {
         if (message.text != null) {
-            nextId++
-            message.id = nextId
-            messages[nextId] = message
-            chats[message.companionId!!] =
-                messages.filterValues { it.companionId == message.companionId }.toMutableMap()
+            message.id = if (messages.lastOrNull() == null) message.id else messages
+                .lastOrNull()?.id!!
+                .plus(1)
+            messages += message
             return true
         }
         return false
     }
 
-    fun deleteChat(companionId: Int): Boolean {
-        if (chats.delete(companionId)) {
-            messages = messages.filterValues { it.companionId != companionId }.toMutableMap()
-            return true
-        }
-        return false
+    fun deleteChat(companionId: Int) {
+        messages = messages
+            .asSequence()
+            .filter { it.companionId != companionId }
+            .ifEmpty { throw EmptyChatException("Чат не найден") }
+            .toMutableList()
     }
 
-    fun getChatsList() = if (chats.isNotEmpty()) chats.values else throw EmptyChatException("Нет сообщений")
-    fun editMessage(newMessage: Message): Boolean {
-        if (messages.delete(newMessage.id!!)) {
-            messages.add(newMessage.id!!, newMessage)
-            chats.add(newMessage.companionId!!, messages)
-            return true
-        }
-        return false
 
+    fun getChats() = messages
+        .asSequence()
+        .ifEmpty { throw EmptyChatException("Нет чатов") }
+        .map { it.companionId }
+        .toSet()
+
+
+    fun editMessage(newMessage: Message) {
+        messages[messages
+            .indexOf(messages
+                .asSequence()
+                .ifEmpty { throw EmptyChatException("Нет сообщений") }
+                .find { it.id == newMessage.id }
+            ).also { if (it == -1) throw EmptyChatException("Сообщение не найдено") }] = newMessage
     }
 
-    fun deleteMessage(id: Int): Boolean {
-        if (messages.containsKey(id)) {
-            val chatId = messages[id]!!.companionId
-            messages.delete(id)
-            chats.add(chatId!!, messages)
-            return true
-        }
-        return false
+
+    fun deleteMessage(id: Int) {
+        messages.remove(messages
+            .asSequence()
+            .ifEmpty { throw EmptyChatException("Нет сообщений") }
+            .find { it.id == id }
+            .also { if (it == null) throw EmptyChatException("Сообщение не найдено") })
     }
 
-    fun getUnreadChatsCount() = messages.filterValues { !it.isRead }.mapKeys { it.value.companionId }.count()
+    fun getUnreadChatsCount() = messages
+        .asSequence()
+        .filter { !it.isRead }
+        .ifEmpty { throw EmptyChatException("Нет непрочитанных чатов") }
+        .map { it.companionId }
+        .toSet()
+        .count()
 
-    fun getLastMessages(): List<Pair<Int?, Message>> {
-        if (messages.isNotEmpty()) {
-            return messages.mapKeys { it.value.companionId }.toList()
-        }
-        throw EmptyChatException("Нет сообщений")
-    }
+    fun getLastMessages() = messages
+        .asSequence()
+        .ifEmpty { throw EmptyChatException("Нет сообщений") }
+        .groupBy { it.companionId }
+        .mapValues { it.value.last().text }
+        .values
+        .toString()
 
-    fun getChartMessages(id: Int, readToMessage: Int): List<Pair<Int, Message>> {
-        messages.filterValues { it.companionId == id }.filterValues { !it.isRead }.readTo(readToMessage)
-            .mapValues { it.value.isRead = true }
-        chats.add(id, messages)
-        return chats[id]!!.toList()
-    }
+    fun getChartMessages(id: Int, readMessage: Int) = messages
+        .asSequence()
+        .filter { it.companionId == id }
+        .filter { !it.isRead }
+        .ifEmpty { throw EmptyChatException("Нет сообщений") }
+        .readTo(readMessage)
+        .forEach { it.isRead = true }
+        .toString()
+
 }
 
+
 data class Message(
-    var id: Int? = null,
+    var id: Int = 1,
     val userId: Int? = null,
     val companionId: Int? = null,
     var isRead: Boolean = false,
@@ -72,26 +88,13 @@ data class Message(
 )
 
 
-fun <K, V> MutableMap<K, V>.delete(toDelete: K): Boolean {
-    if (this.contains(toDelete)) {
-        this.remove(toDelete)
-        return true
-    }
-    return false
-}
-
-fun <K, V> MutableMap<K, V>.add(id: K, toAdd: V) {
-    this[id] = toAdd
-}
-
-fun <K, V> Map<out K, V>.readTo(range: Int): Map<K, V> {
-    val result = LinkedHashMap<K, V>()
+fun <E> Sequence<E>.readTo(range: Int): List<E> {
+    val result = LinkedList<E>()
     var count = 0
     for (entry in this) {
         count++
-        result.put(entry.key, entry.value)
+        result.add(entry)
         if (count == range) break
     }
-
     return result
 }
